@@ -1,6 +1,6 @@
 // import React from 'react';
 // import base64url from "base64url";
-// import CBOR  from 'cbor';
+import CBOR  from 'cbor';
 // import base64url from "base64-arraybuffer";
 import { generateRandomBuffer } from './Helpers';
 import base64url from "../Implementations/base64url-arraybuffer";
@@ -97,8 +97,7 @@ export let getMakeCredentialChallenge = (options) => {
     var publicKey = {
         challenge: session.challenge,
         rp: {
-            // id: 'TestCorpsID', //optional id <- can help to make it more secure ...basically the browser id
-            //Should have a field to grab where youre coming from or manually put this
+            // id: 'TestCorpsID', //optional id <- can help to make it more secure ...basically the browswer
             name: "TestCorpsName",
         },
         user: {
@@ -163,9 +162,10 @@ export let passwordlessLogin = (payload) => {
     return Promise.resolve({'status': 'startFIDOAuthenticationProcess'});
 };
 
-export let getThatAssertionChallenge = () => {
+export let  getThatAssertionChallenge = () => {
     // var challenge = new Uint8Array(32);
     // window.crypto.getRandomValues(challenge);
+
 
     session.challenge = base64url.encode(generateRandomBuffer(32));
 

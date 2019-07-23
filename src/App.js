@@ -8,11 +8,11 @@ import Col from 'react-bootstrap/Col';
 import { passwordlessRegistration, getMakeCredentialChallenge, makeCredentialResponse, passwordlessLogin, getThatAssertionChallenge, getAssertionResponse } from "./Implementations/Server.js";
 import { performatMakeCredRequest, publicKeyCredentialToJSON , performatGetAssertRequest} from "./Implementations/Helpers";
 // import CBOR from 'borc';
-import CBOR from 'cbor';
-// import CBOR from './Implementations/cbor.js';
+// import CBOR from 'cbor';
+import CBOR from './Implementations/cbor.js';
 // import base64url from './Implementations/base64url-arraybuffer.js'
 import base64url from 'base64url';
-// import { parseAuthData, bufferToString, bufToHex } from './Implementations/Helpers';
+import { parseAuthData, bufferToString, bufToHex } from './Implementations/Helpers';
 
 
 class App extends React.Component {
@@ -51,32 +51,24 @@ class App extends React.Component {
             console.log('after preformat MkeCred');
             console.log(makeCredChallenge);
 
-
             return navigator.credentials.create({'publicKey': makeCredChallenge}); //takes in object required for creating Web Authn and returns PublicKeyCredential
 
           })
           .then((newCredentialInfo) => {
-
+            alert('Open your browser console!');
+            console.log('SUCCESS', newCredentialInfo)
+            console.log('ClientDataJSON: ', bufferToString(newCredentialInfo.response.clientDataJSON));
+            let attestationObject = CBOR.decode(newCredentialInfo.response.attestationObject);
+            console.log('AttestationObject: ', attestationObject);
+            let authData = parseAuthData(attestationObject.authData);
+            console.log('AuthData: ', authData);
+            console.log('CredID: ', bufToHex(authData.credID));
+            console.log('AAGUID: ', bufToHex(authData.aaguid));
+            console.log('PublicKey', CBOR.decode(authData.COSEPublicKey.buffer));
 
             console.log('This is how the newCredentialInfo looks before JSON');
             console.log(newCredentialInfo);
 
-            // //test parse more for JSON
-            console.log('Parsed ClientDataJSON');
-            const utf8Decoder = new TextDecoder('utf-8');
-            const decodedClientData = utf8Decoder.decode(
-                newCredentialInfo.response.clientDataJSON);
-            const clientDataObj = JSON.parse(decodedClientData);
-            console.log(clientDataObj);
-/*
-            //test parse more for Attestation Object
-            console.log('Decoding AttestationObject');
-            const decodedAttestationObj = CBOR.decode(
-                newCredentialInfo.response.attestationObject);
-
-            console.log(decodedAttestationObj);
-
-*/
 
             newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo);
 
