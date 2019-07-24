@@ -1,67 +1,137 @@
-// import React from 'react';
+import React from 'react';
 // import base64url from "base64url";
-import CBOR  from 'cbor';
+// import CBOR  from 'cbor';
 // import base64url from "base64-arraybuffer";
 import { generateRandomBuffer } from './Helpers';
 import base64url from "../Implementations/base64url-arraybuffer";
+import firebase from '../firebase';
 
-let db = {
-    'addUser': (email, struct) => {
-        let userHandleToEmail = localStorage.getItem('userHandleToEmail');
-        if (!userHandleToEmail) {
-            userHandleToEmail = '{}';
-        }
+let db = firebase.firestore();
 
-        userHandleToEmail = JSON.parse(userHandleToEmail);
-
-        userHandleToEmail[struct.id] = email;
-
-        localStorage.setItem(email, JSON.stringify(struct));
-        localStorage.setItem('userHandleToEmail', JSON.stringify(userHandleToEmail));
-    },
-    'userExist': (email) => {
-        let userJson = localStorage.getItem(email);
-        if (!userJson) {
-            return false;
-        }
-        return true;
-    },
-    'getUser': (email) => {
-        let userJson = localStorage.getItem(email);
-        if (!userJson) {
-            throw new Error(`User Email ${email} does not exist!`);
-        }
-        return JSON.parse(userJson);
-    },
-    'getUserByEmailHandle': (userHandle) => {
-        let userHandleToEmail = localStorage.getItem('userHandleToEmail');
-        if (!userHandleToEmail) {
-            userHandleToEmail = '{}';
-        }
-
-        userHandleToEmail = JSON.parse(userHandleToEmail);
-
-        let userEmail = userHandleToEmail[userHandle];
-
-        let userJSON = localStorage.getItem(userEmail);
-        if(!userJSON) {
-            throw new Error(`Email ${userEmail} does not exist! :/`);
-        }
-
-        return JSON.parse(userJSON);
-    },
-    'updateUser': (email, struct) => {
-        let userJSON = localStorage.getItem(email);
-        if(!userJSON) {
-            throw new Error (`Email ${email} does not exist!`);
-        }
-        localStorage.setItem(email, JSON.stringify(struct));
-    },
-    'deleteUser': (email) => {
-        localStorage.removeItem(email);
+class Server extends React.Component {
+    constructor(){
+        super();
+        this.state = {
+            email: "",
+            displayName: "",
+            credID: "",
+            rawID:"",
+            registrationComplete:false,
+        };
     }
 
-};
+    addUser = (email, struct) => {
+        let userHandleToEmail = db.collection('users');
+        userHandleToEmail.add({
+            email:email,
+            displayName:struct.displayName,
+        }).then(doc => {
+            this.setState({
+                email:"",
+                displayName:"",
+            });
+        });
+    };
+
+    getUser = (email) => {
+        let getEmail = db.collection('users');
+        getEmail.get()
+            .then(snapshot => {
+                snapshot.forEach(doc => {
+                    if (doc.data().email === email) {
+                        return doc.data();
+                    } else {
+                        throw new Error(`User Email ${email} does not exist!`);
+                    }
+                });
+            });
+    };
+
+    userExist = (email) => {
+        let userEmail = db.collection('users');
+        userEmail.get()
+            .then(snapshot => {
+                snapshot.forEach(doc => {
+                    if (doc.data().email === email) {
+                        return true;
+                    }
+                });
+            });
+        return false;
+    };
+
+    updateUser = (email, struct) => {
+        let userUp = db.collection('users');
+        userUp.get()
+            .then(snapshot => {
+                snapshot.forEach(doc => {
+                    if (doc.data().email === email) {
+                        let docID = doc.id;
+                        userUp.doc(docID).update({registrationComplete: true})
+                    }
+
+                });
+            });
+    }
+
+}
+// let db = {
+//     'addUser': (email, struct) => {
+//         let userHandleToEmail = localStorage.getItem('userHandleToEmail');
+//         if (!userHandleToEmail) {
+//             userHandleToEmail = '{}';
+//         }
+//
+//         userHandleToEmail = JSON.parse(userHandleToEmail);
+//
+//         userHandleToEmail[struct.id] = email;
+//
+//         localStorage.setItem(email, JSON.stringify(struct));
+//         localStorage.setItem('userHandleToEmail', JSON.stringify(userHandleToEmail));
+//     },
+//     'userExist': (email) => {
+//         let userJson = localStorage.getItem(email);
+//         if (!userJson) {
+//             return false;
+//         }
+//         return true;
+//     },
+//     'getUser': (email) => {
+//         let userJson = localStorage.getItem(email);
+//         if (!userJson) {
+//             throw new Error(`User Email ${email} does not exist!`);
+//         }
+//         return JSON.parse(userJson);
+//     },
+//     'getUserByEmailHandle': (userHandle) => {
+//         let userHandleToEmail = localStorage.getItem('userHandleToEmail');
+//         if (!userHandleToEmail) {
+//             userHandleToEmail = '{}';
+//         }
+//
+//         userHandleToEmail = JSON.parse(userHandleToEmail);
+//
+//         let userEmail = userHandleToEmail[userHandle];
+//
+//         let userJSON = localStorage.getItem(userEmail);
+//         if(!userJSON) {
+//             throw new Error(`Email ${userEmail} does not exist! :/`);
+//         }
+//
+//         return JSON.parse(userJSON);
+//     },
+//     'updateUser': (email, struct) => {
+//         let userJSON = localStorage.getItem(email);
+//         if(!userJSON) {
+//             throw new Error (`Email ${email} does not exist!`);
+//         }
+//         localStorage.setItem(email, JSON.stringify(struct));
+//     },
+//     'deleteUser': (email) => {
+//         localStorage.removeItem(email);
+//     }
+//
+// };
 
 let session = {};
 

@@ -1,6 +1,8 @@
 import * as firebase from 'firebase';
 
-let firebaseConfig = {
+const settings = {};
+
+const firebaseConfig = {
     apiKey: "AIzaSyBYdOhh4ejgORrXSq8Q1xMh8vZGvZ7MyRs",
     authDomain: "demoauth-7eec5.firebaseapp.com",
     databaseURL: "https://demoauth-7eec5.firebaseio.com",
@@ -11,5 +13,7 @@ let firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
+firebase.firestore().settings(settings);
 
 export default firebase;

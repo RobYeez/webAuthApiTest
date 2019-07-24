@@ -7,10 +7,7 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { passwordlessRegistration, getMakeCredentialChallenge, makeCredentialResponse, passwordlessLogin, getThatAssertionChallenge, getAssertionResponse } from "./Implementations/Server.js";
 import { performatMakeCredRequest, publicKeyCredentialToJSON , performatGetAssertRequest} from "./Implementations/Helpers";
-// import CBOR from 'borc';
-// import CBOR from 'cbor';
 import CBOR from './Implementations/cbor.js';
-// import base64url from './Implementations/base64url-arraybuffer.js'
 import base64url from 'base64url';
 import { parseAuthData, bufferToString, bufToHex } from './Implementations/Helpers';
 
