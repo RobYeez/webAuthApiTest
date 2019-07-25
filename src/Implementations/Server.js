@@ -41,24 +41,27 @@ function userExist (email) {
 //getUser(payload.email); grabs out user as Object
 async function getUser (email) {
     let findUser = db.collection('users');
-    findUser.where('email', '==', email).get()
-        .then(snapshot => {
-            if(snapshot.empty) {
-                console.log('There is no such User for getUser');
-                throw new Error (`There is no such email: ${email}`);
-            }
-            else {
+    await findUser.where('email', '==', email).get()
+        .then (snapshot => {
+            snapshot.forEach(doc => {
+                console.log('this is doc data');
+                console.log(doc.data());
+                // let dataz = await doc.data();
+                return doc.data();
+            })
+            // if(snapshot.empty) {
+                // console.log('There is no such User for getUser');
+                // throw new Error (`There is no such email: ${email}`);
+            // }
+            // else {
                 // console.log('User does Exist getUser');
-                // let doc = snapshot.docs; //snapshot.docs show a list of docs
-                // console.log(doc);
-                // return snapshot.docs.data();
-                snapshot.forEach(doc => {
-                    console.log(doc.id, '=>', doc.data()); //doc.id is specific to that one id
-                    return doc.data();
+                // snapshot.forEach(doc => {
+                //     console.log(doc.id, '=>', doc.data()); //doc.id is specific to that one id
+                //     return doc.data();
                     // console.log(JSON.stringify(doc.data()));
                 })
-            }
-        })
+            // }
+        // })
 }
 //have to check this one too
 //change email to have updated user object (completetion/credentials) as string
@@ -155,7 +158,7 @@ function getUserByEmailHandle (userHandle) {
 // };
 
 let session = {};
-let user;
+// let user;
 //REGISTER STUFF
 export let passwordlessRegistration = (payload) => {
     session = {};
@@ -192,7 +195,7 @@ export let getMakeCredentialChallenge = (options) => {
     //             console.log(response);
     // });
     // let user =  getUser(session.email);
-    user =  getUser(session.email);
+    let user =  getUser(session.email);
     // await sleep(2000);
 
     session.challenge = base64url.encode(generateRandomBuffer(32)); //BUFFER SOURCE
