@@ -146,6 +146,8 @@ export let makeCredentialResponse = (payload) => {
     user.credentials.push(payload.id);
 
     db.updateUser(session.email, user);
+    console.log("im trying to see user credentials");
+    console.log(user.credentials);
 
     session = {};
 
