@@ -8,95 +8,116 @@ import firebase from '../firebase';
 
 let db = firebase.firestore();
 
-class Server extends React.Component {
-    constructor(){
-        super();
-        this.state = {
-            email: "",
-            displayName: "",
-            credID: "",
-            rawID:"",
-            registrationComplete:false,
-        };
-    }
-
-    addUser = (email, struct) => {
-        let userHandleToEmail = db.collection('users');
-        userHandleToEmail.add({
-            email:email,
-            displayName:struct.displayName,
-        }).then(doc => {
-            this.setState({
-                email:"",
-                displayName:"",
-            });
-        });
-    };
-
-    getUser = (email) => {
-        let getEmail = db.collection('users');
-        getEmail.get()
-            .then(snapshot => {
+//addUser(payload.email, payload); payload = email, displayname + id, credentials[]
+function addUser (email, struct) {
+    let newUser = db.collection('users');
+    //just add the new user into collection the other parts do the check
+    newUser.add({
+        email: email,
+        displayName: struct.displayName,
+        rawID: struct.id,
+        credentials: struct.credentials,
+    }).then(ref => {
+        //just to double check it added
+        console.log('Added document with ID onto firebase: ', ref.id);
+    })
+}
+//userExist(payload.email); checks to see if there is that user and returns true/false
+function userExist (email) {
+    let findUser = db.collection('users');
+    findUser.where('email', '==', email).get()
+        .then(snapshot => {
+            if(snapshot.empty) { //means no matching doc
+                console.log('There is no such User for userExist');
+                return false;
+            }
+            else {
+                console.log('User does userExist');
+                return true;
+            }
+        })
+}
+//not 100% sure if this one works need to get it to return as object
+//getUser(payload.email); grabs out user as Object
+async function getUser (email) {
+    let findUser = db.collection('users');
+    findUser.where('email', '==', email).get()
+        .then(snapshot => {
+            if(snapshot.empty) {
+                console.log('There is no such User for getUser');
+                throw new Error (`There is no such email: ${email}`);
+            }
+            else {
+                // console.log('User does Exist getUser');
+                // let doc = snapshot.docs; //snapshot.docs show a list of docs
+                // console.log(doc);
+                // return snapshot.docs.data();
                 snapshot.forEach(doc => {
-                    if (doc.data().email === email) {
-                        return doc.data();
-                    } else {
-                        throw new Error(`User Email ${email} does not exist!`);
-                    }
-                });
-            });
-    };
+                    console.log(doc.id, '=>', doc.data()); //doc.id is specific to that one id
+                    return doc.data();
+                    // console.log(JSON.stringify(doc.data()));
+                })
+            }
+        })
+}
+//have to check this one too
+//change email to have updated user object (completetion/credentials) as string
+//registrationComplete = true and add on credentials
+function updateUser (email, struct) {
+    let updateUser = db.collection('users');
+    updateUser.where('email', '==', email).get()
+        .then(snapshot => {
+            if(snapshot.empty) {
+                console.log('There is no such User for updateUser');
+                throw new Error (`There is no such email: ${email}`);
+            }
+            else {
+                console.log('User does Exist updateUser');
+                snapshot.docs.update({registrationComplete:true, credentials:struct.credentials});
+            }
+        })
+}
 
-    userExist = (email) => {
-        let userEmail = db.collection('users');
-        userEmail.get()
-            .then(snapshot => {
-                snapshot.forEach(doc => {
-                    if (doc.data().email === email) {
-                        return true;
-                    }
-                });
-            });
-        return false;
-    };
+// function deleteUser (email) {
+//     let deleteUser = db.collection('users');
+//     deleteUser.where('email', '==', email).get()
+//         .then(snapshot => {
+//             if(snapshot.empty) {
+//                 console.log('There is no such User for updateUser');
+//                 throw new Error (`There is no such email: ${email}`);
+//             }
+//             else {
+//                 console.log('User does Exist deleteUser');
+//                 snapshot.docs.delete();
+//             }
+//         })
+// }
 
-    updateUser = (email, struct) => {
-        let userUp = db.collection('users');
-        userUp.get()
-            .then(snapshot => {
-                snapshot.forEach(doc => {
-                    if (doc.data().email === email) {
-                        let docID = doc.id;
-                        userUp.doc(docID).update({registrationComplete: true})
-                    }
-
-                });
-            });
-    }
+function getUserByEmailHandle (userHandle) {
 
 }
 // let db = {
 //     'addUser': (email, struct) => {
 //         let userHandleToEmail = localStorage.getItem('userHandleToEmail');
-//         if (!userHandleToEmail) {
-//             userHandleToEmail = '{}';
+//         if (!userHandleToEmail) { //if return empty
+//             userHandleToEmail = '{}'; //make new object
 //         }
 //
-//         userHandleToEmail = JSON.parse(userHandleToEmail);
+//         userHandleToEmail = JSON.parse(userHandleToEmail); //makes it into JS object
 //
-//         userHandleToEmail[struct.id] = email;
+//         userHandleToEmail[struct.id] = email; // puts in JS object.id = email
 //
-//         localStorage.setItem(email, JSON.stringify(struct));
-//         localStorage.setItem('userHandleToEmail', JSON.stringify(userHandleToEmail));
+//         localStorage.setItem(email, JSON.stringify(struct));  //store into key of EMAIL the string conversion of object STRUCT
+//         localStorage.setItem('userHandleToEmail', JSON.stringify(userHandleToEmail)); //store into key of userHandleToEmail the string conversion of object STRUCT
 //     },
-//     'userExist': (email) => {
+//     'userExist': (email) => { //return true or false depending on user
 //         let userJson = localStorage.getItem(email);
-//         if (!userJson) {
+//         if (!userJson) { //returns a string ... if empty then false
 //             return false;
 //         }
 //         return true;
 //     },
-//     'getUser': (email) => {
+//     'getUser': (email) => { //return object of found user
 //         let userJson = localStorage.getItem(email);
 //         if (!userJson) {
 //             throw new Error(`User Email ${email} does not exist!`);
@@ -122,10 +143,10 @@ class Server extends React.Component {
 //     },
 //     'updateUser': (email, struct) => {
 //         let userJSON = localStorage.getItem(email);
-//         if(!userJSON) {
+//         if(!userJSON) { //check to see if it exist
 //             throw new Error (`Email ${email} does not exist!`);
 //         }
-//         localStorage.setItem(email, JSON.stringify(struct));
+//         localStorage.setItem(email, JSON.stringify(struct)); //change email to have updated user object (completetion/credentials) as string
 //     },
 //     'deleteUser': (email) => {
 //         localStorage.removeItem(email);
@@ -134,12 +155,12 @@ class Server extends React.Component {
 // };
 
 let session = {};
-
+let user;
 //REGISTER STUFF
 export let passwordlessRegistration = (payload) => {
     session = {};
-    //if user already exist, delete user
-    if(db.userExist(payload.email) && db.getUser(payload.email).registrationComplete) { //.registrationComplete?
+    //if user already exist (check email) (check registration meaning credentials are made)
+    if(userExist(payload.email) && getUser(payload.email).registrationComplete) { //.registrationComplete?
         return Promise.reject({'status': 'failed', 'errorMessage': 'User already exists!'});
     }
 
@@ -147,22 +168,39 @@ export let passwordlessRegistration = (payload) => {
     payload.id = base64url.encode(generateRandomBuffer(32));
     payload.credentials = [];
 
-    db.addUser(payload.email, payload);
+    addUser(payload.email, payload); //add user to DB
 
     session.email = payload.email;
     session.uv = true; //just to identify its passwordlessregis;
 
+    console.log('passwordlessRegistration complete');
     return Promise.resolve({'status': 'startFIDOEnrollmentPasswordlessSession'});
 };
-
+//*** PROBLEM HERE RN ***
 export let getMakeCredentialChallenge = (options) => {
     //check to see it is there
     if (!session.email) {
         return Promise.reject({'status': 'failed', 'errorMessage': 'Access denied!'});
     }
-    let user = db.getUser(session.email);
+
+    // let user = async() => {
+    //     return await getUser(session.email);
+    // };
+
+    //     getUser(session.email)
+    //         .then(response => {
+    //             console.log(response);
+    // });
+    // let user =  getUser(session.email);
+    user =  getUser(session.email);
+    // await sleep(2000);
 
     session.challenge = base64url.encode(generateRandomBuffer(32)); //BUFFER SOURCE
+    console.log('this is user.id');
+    // let user = 1;
+    console.log(user.rawID);
+    console.log(user);
+    // console.log(user.email);
 
     var publicKey = {
         challenge: session.challenge,
@@ -171,7 +209,7 @@ export let getMakeCredentialChallenge = (options) => {
             name: "TestCorpsName",
         },
         user: {
-            id: user.id,
+            id: user.rawID, //user isnt an object
             name: user.email,
             displayName: user.displayName
         },
@@ -209,12 +247,12 @@ export let makeCredentialResponse = (payload) => {
         return Promise.reject({'status': 'failed', 'errorMessage': 'Access denied!'});
     }
 
-    let user = db.getUser(session.email);
+    let user = getUser(session.email);
 
     user.registrationComplete = true;
     user.credentials.push(payload.id);
 
-    db.updateUser(session.email, user);
+    updateUser(session.email, user);
 
     session = {};
 
@@ -223,7 +261,7 @@ export let makeCredentialResponse = (payload) => {
 
 //LOGIN STUFF
 export let passwordlessLogin = (payload) => {
-    if(!db.userExist(payload.email)) {
+    if(!userExist(payload.email)) {
         return Promise.reject('Invalid Email...not registered?');
     }
     session.email = payload.email;
@@ -232,7 +270,7 @@ export let passwordlessLogin = (payload) => {
     return Promise.resolve({'status': 'startFIDOAuthenticationProcess'});
 };
 
-export let  getThatAssertionChallenge = () => {
+export let getThatAssertionChallenge = () => {
     // var challenge = new Uint8Array(32);
     // window.crypto.getRandomValues(challenge);
 
@@ -245,7 +283,7 @@ export let  getThatAssertionChallenge = () => {
     };
 
     if (session.email) {
-        let user = db.getUser(session.email);
+        let user = getUser(session.email);
         publicKey.allowCredentials = user.credentials.map((credId) => {
             return { type: 'public-key', id: credId };
         })
@@ -259,7 +297,7 @@ export let  getThatAssertionChallenge = () => {
 };
 
 export let getAssertionResponse = (payload) => {
-    if (!session.email && !db.getUserByEmailHandle(payload.response.userHandle)) {
+    if (!session.email && !getUserByEmailHandle(payload.response.userHandle)) {
         return Promise.reject({'status': 'failed', 'errorMessage': 'Access denied!'});
     }
 

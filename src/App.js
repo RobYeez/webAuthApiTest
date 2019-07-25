@@ -11,14 +11,19 @@ import CBOR from './Implementations/cbor.js';
 import base64url from 'base64url';
 import { parseAuthData, bufferToString, bufToHex } from './Implementations/Helpers';
 
-
+//DEBUGGING AND ADDING IN OF FIREBASE ... leftoff at something wtih setState
 class App extends React.Component {
   constructor(props) {
-    super(props);
-    this.state  = {
-      email : "",
+    super();
+    this.state = {
+      email: "",
       displayName: "",
+      rawID: "",
+      credentials: "",
+      credID: "",
+      registrationComplete: false,
     };
+
     this.handleSubmitRegistration = this.handleSubmitRegistration.bind(this);
     this.handleSubmitLogin = this.handleSubmitLogin.bind(this);
   }
@@ -26,7 +31,6 @@ class App extends React.Component {
   //make credentials
   handleSubmitRegistration(event) {
     event.preventDefault();
-
     if(this.state.email && this.state.displayName) {
       console.log('registrationLoopCheckCorrect');
       let email = this.state.email;
