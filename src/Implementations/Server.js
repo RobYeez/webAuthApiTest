@@ -47,7 +47,7 @@ async function getUser (email) {
                 console.log('this is doc data');
                 console.log(doc.data());
                 // let dataz = await doc.data();
-                return doc.data();
+                return doc.data();  // **** <- return value doesnt make it in time...
             })
             // if(snapshot.empty) {
                 // console.log('There is no such User for getUser');
