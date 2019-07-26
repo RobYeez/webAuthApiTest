@@ -9,6 +9,7 @@
     "cbor": "^4.1.5",
     "cbor-sync": "^1.0.4",
     "firebase-admin": "^8.2.0",
+    "fs": "0.0.1-security",
     "install": "^0.13.0",
     "npm": "^6.10.1",
     "react": "^16.8.6",

@@ -4,8 +4,43 @@
 // import base64url from "base64-arraybuffer";
 import { generateRandomBuffer } from './Helpers';
 import base64url from "../Implementations/base64url-arraybuffer";
+import DB from "../TextfileDB/DB";
+import fs from 'fs';
 
 let db = {
+
+    'addUser2': (email, struct) => {
+        fs.readFile(DB, function (err, data) {
+            let userHandleToEmail = "";
+            if (err) {
+                throw err;
+            }
+            if (data.includes(email)) { //CONTAINS: give it data
+                userHandleToEmail = data;
+            }
+            else {   //
+                userHandleToEmail = '{}'; //EMPTY: give it empty
+            }
+            userHandleToEmail = JSON.parse(userHandleToEmail);
+
+            userHandleToEmail[struct.id] = email;
+
+            let dataIn = userHandleToEmail;
+            fs.writeFile(DB, dataIn, (err) => {
+                if (err) {
+                    throw err;
+                }
+            })
+
+        });
+
+
+
+    },
+
+
+
+
     'addUser': (email, struct) => {
         let userHandleToEmail = localStorage.getItem('userHandleToEmail');
         if (!userHandleToEmail) {
@@ -77,7 +112,7 @@ export let passwordlessRegistration = (payload) => {
     payload.id = base64url.encode(generateRandomBuffer(32));
     payload.credentials = [];
 
-    db.addUser(payload.email, payload);
+    db.addUser2(payload.email, payload);
 
     session.email = payload.email;
     session.uv = true; //just to identify its passwordlessregis;
