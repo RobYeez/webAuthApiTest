@@ -46,6 +46,7 @@ async function getUser (email) {
             snapshot.forEach(doc => {
                 console.log('this is doc data');
                 console.log(doc.data());
+
                 // let dataz = await doc.data();
                 return doc.data();  // **** <- return value doesnt make it in time...
             })
@@ -182,9 +183,19 @@ export let passwordlessRegistration = (payload) => {
 //*** PROBLEM HERE RN ***
 export let getMakeCredentialChallenge = (options) => {
     //check to see it is there
+    var publicKey;
     if (!session.email) {
         return Promise.reject({'status': 'failed', 'errorMessage': 'Access denied!'});
     }
+    let findUser = db.collection('users');
+    const user2 = findUser.where('email', '==', session.email).get()
+      .then (snapshot => {
+          snapshot.forEach(doc => {
+              console.log('this is doc data');
+              console.log(doc.data());
+
+              const user = doc.data();  // **** <- return value doesnt make it in time...
+
 
     // let user = async() => {
     //     return await getUser(session.email);
@@ -195,7 +206,7 @@ export let getMakeCredentialChallenge = (options) => {
     //             console.log(response);
     // });
     // let user =  getUser(session.email);
-    let user =  getUser(session.email);
+    // let user =  getUser(session.email);
     // await sleep(2000);
 
     session.challenge = base64url.encode(generateRandomBuffer(32)); //BUFFER SOURCE
@@ -205,7 +216,7 @@ export let getMakeCredentialChallenge = (options) => {
     console.log(user);
     // console.log(user.email);
 
-    var publicKey = {
+     publicKey = {
         challenge: session.challenge,
         rp: {
             // id: 'TestCorpsID', //optional id <- can help to make it more secure ...basically the browswer
@@ -242,7 +253,10 @@ export let getMakeCredentialChallenge = (options) => {
             publicKey.authenticatorSelection.userVerification = 'required';
         }
     }
-    return Promise.resolve(publicKey);
+          })
+      return Promise.resolve(publicKey);
+
+      })
 };
 
 export let makeCredentialResponse = (payload) => {
