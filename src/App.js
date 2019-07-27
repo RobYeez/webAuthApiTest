@@ -6,10 +6,19 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { passwordlessRegistration, getMakeCredentialChallenge, makeCredentialResponse, passwordlessLogin, getThatAssertionChallenge, getAssertionResponse } from "./Implementations/Server.js";
-import { performatMakeCredRequest, publicKeyCredentialToJSON , performatGetAssertRequest} from "./Implementations/Helpers";
+import {
+  performatMakeCredRequest,
+  publicKeyCredentialToJSON,
+  performatGetAssertRequest,
+  generateRandomBuffer
+} from "./Implementations/Helpers";
 import CBOR from './Implementations/cbor.js';
 import base64url from 'base64url';
 import { parseAuthData, bufferToString, bufToHex } from './Implementations/Helpers';
+import firebase from "./firebase";
+
+
+let db = firebase.firestore();
 
 //DEBUGGING AND ADDING IN OF FIREBASE ... leftoff at something wtih setState
 class App extends React.Component {
@@ -29,63 +38,163 @@ class App extends React.Component {
   }
 
   //make credentials
-  handleSubmitRegistration(event) {
+  async handleSubmitRegistration(event) {
     event.preventDefault();
-    if(this.state.email && this.state.displayName) {
-      console.log('registrationLoopCheckCorrect');
-      let email = this.state.email;
+
+    if (this.state.email && this.state.displayName) {
+
+     console.log('registrationLoopCheckCorrect');
+     let email = this.state.email;
       let displayName = this.state.displayName;
-      passwordlessRegistration({email, displayName})
-          .then((serverResponse) => {
-            if (serverResponse.status !== 'startFIDOEnrollmentPasswordlessSession') {
-              throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage);
-            }
-            return getMakeCredentialChallenge({'uv': true});
-          })
-          .then((makeCredChallenge) => {
+      let session = {};
+      //if user already exist (check email) (check registration meaning credentials are made)
+      // if(userExist(payload.email) && getUser(payload.email).registrationComplete) { //.registrationComplete?
+      //   return Promise.reject({'status': 'failed', 'errorMessage': 'User already exists!'});
+      // }
 
-            console.log('before preformat MkeCRED');
-            console.log(makeCredChallenge);
+      //encode payload id so no one knows
+      let id = base64url.encode(generateRandomBuffer(32));
+      let credentials = [];
 
-            makeCredChallenge = performatMakeCredRequest(makeCredChallenge);
+      let newUser = db.collection('users');
+      //just add the new user into collection the other parts do the check
+      newUser.add({
+        email: email,
+        displayName: displayName,
+        rawID: id,
+        credentials: credentials,
+      }).then(ref => {
+        //just to double check it added
+        console.log('Added document with ID onto firebase: ', ref.id);
+      });
 
-            console.log('after preformat MkeCred');
-            console.log(makeCredChallenge);
+      session.email = email;
+      session.uv = true; //just to identify its passwordlessregis;
 
-            return navigator.credentials.create({'publicKey': makeCredChallenge}); //takes in object required for creating Web Authn and returns PublicKeyCredential
+      console.log('passwordlessRegistration complete');
+      var publicKey;
+      if (!session.email) {
+        return Promise.reject({'status': 'failed', 'errorMessage': 'Access denied!'});
+      }
+      let findUser = db.collection('users');
+      const user2 = await findUser.where('email', '==', session.email).get()
+          .then(snapshot => {
+            snapshot.forEach(doc => {
+              console.log('this is doc data');
+              console.log(doc.data());
 
-          })
-          .then((newCredentialInfo) => {
-            alert('Open your browser console!');
-            console.log('SUCCESS', newCredentialInfo)
-            console.log('ClientDataJSON: ', bufferToString(newCredentialInfo.response.clientDataJSON));
-            let attestationObject = CBOR.decode(newCredentialInfo.response.attestationObject);
-            console.log('AttestationObject: ', attestationObject);
-            let authData = parseAuthData(attestationObject.authData);
-            console.log('AuthData: ', authData);
-            console.log('CredID: ', bufToHex(authData.credID));
-            console.log('AAGUID: ', bufToHex(authData.aaguid));
-            console.log('PublicKey', CBOR.decode(authData.COSEPublicKey.buffer));
-
-            console.log('This is how the newCredentialInfo looks before JSON');
-            console.log(newCredentialInfo);
+              const user = doc.data();  // **** <- return value doesnt make it in time...
 
 
-            newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo);
+              session.challenge = base64url.encode(generateRandomBuffer(32)); //BUFFER SOURCE
+              console.log('this is user.id');
+              // let user = 1;
+              console.log(user.rawID);
+              console.log(user);
+              // console.log(user.email);
 
+              publicKey = {
+                challenge: session.challenge,
+                rp: {
+                  // id: 'TestCorpsID', //optional id <- can help to make it more secure ...basically the browswer
+                  name: "TestCorpsName",
+                },
+                user: {
+                  id: user.rawID, //user isnt an object
+                  name: user.email,
+                  displayName: user.displayName
+                },
+                pubKeyCredParams: [
+                  {type: 'public-key', alg: -7}, //ES256
+                  {type: 'public-key', alg: -257} //RS256
+                ],
+                //OPTONAL
+                // authenticatorSelection: {
+                //     'userVerification': 'required'
+                // },
+                //OPTIONAL
+                attestation: 'direct',  //shows fmt data
+
+                status: 'ok'
+              };
+
+              // if (options) {
+              //   if (!publicKey.authenticatorSelection) {
+              //     publicKey.authenticatorSelection = {};
+              //   }
+              //   if (options.attestation) {
+              //     publicKey.attestation = options.attestation;
+              //   }
+              //
+              //   if (options.uv) {
+              //     publicKey.authenticatorSelection.userVerification = 'required';
+              //   }
+              // }
+
+
+              // console.log(publicKey);
+              let makeCredChallenge = publicKey;
+              console.log('before preformat MkeCRED');
+              console.log(makeCredChallenge);
+
+
+              makeCredChallenge = performatMakeCredRequest(makeCredChallenge);
+
+              console.log('after preformat MkeCred');
+              console.log(makeCredChallenge);
+
+              //potentially make an async call here?
+              let newCredentialInfo = navigator.credentials.create({'publicKey': makeCredChallenge}); //takes in object required for creating Web Authn and returns PublicKeyCredential
+
+              // let newCredentialInfo = await apiCall(makeCredChallenge);
+
+              //   return navigator.credentials.create({'publicKey': makeCredChallenge}); //takes in object required for creating Web Authn and returns PublicKeyCredential
+            // })
+            // .then((newCredentialInfo) => {
+            //   alert('Open your browser console!');
+
+
+              // console.log('SUCCESS', newCredentialInfo);
+              // console.log('ClientDataJSON: ', bufferToString(newCredentialInfo.clientDataJSON));
+              // let attestationObject = CBOR.decode(newCredentialInfo.attestationObject);
+              // console.log('AttestationObject: ', attestationObject);
+              // let authData = parseAuthData(attestationObject.authData);
+              // console.log('AuthData: ', authData);
+              // console.log('CredID: ', bufToHex(authData.credID));
+              // console.log('AAGUID: ', bufToHex(authData.aaguid));
+              // console.log('PublicKey', CBOR.decode(authData.COSEPublicKey.buffer));
+
+              console.log('This is how the newCredentialInfo looks before JSON');
+              console.log(newCredentialInfo);
+
+              newCredentialInfo = publicKeyCredentialToJSON(newCredentialInfo);
             console.log('This is how the newCredtialInfo Looks After JSON');
             console.log(newCredentialInfo);
-            //
-            // // //test parse more for Attestation Object <-left off here
-            // let attestationObjectBuffer = base64url.toBuffer(newCredentialInfo.response.attestationObject);
-            // let ctapMakeCredResp  = CBOR.decodeAllSync(attestationObjectBuffer)[0];
-            // // let ctapMakeCredResp = CBOR.decodeAllSync(newCredentialInfo.response.attestationObject)[0];
-            // console.log('medium test version');
-            // console.log(ctapMakeCredResp);
-            // const decodedAttestationObj = CBOR.decode(
-            //     newCredentialInfo.response.attestationObject)[0];
-            //
-            // console.log(decodedAttestationObj);
+
+
+
+            if(!session.email) {
+              return Promise.reject({'status': 'failed', 'errorMessage': 'Access denied!'});
+            }
+
+        let updateUser = db.collection('users').doc(id);
+            let updateUser2 = updateUser.update({registrationComplete: true, credentials:id});
+            // user.registrationComplete = true;
+            // user.credentials.push(id);
+
+            // updateUser(session.email, user);
+
+            session = {};
+          });
+          });
+    }
+  }
+    /*
+
+
+
+
+
 
 
             return makeCredentialResponse(newCredentialInfo);
@@ -104,7 +213,7 @@ class App extends React.Component {
           });
     }
   }
-
+*/
   handleSubmitLogin(event) {
     event.preventDefault();
     if(this.state.email) {

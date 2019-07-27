@@ -197,18 +197,6 @@ export let getMakeCredentialChallenge = (options) => {
               const user = doc.data();  // **** <- return value doesnt make it in time...
 
 
-    // let user = async() => {
-    //     return await getUser(session.email);
-    // };
-
-    //     getUser(session.email)
-    //         .then(response => {
-    //             console.log(response);
-    // });
-    // let user =  getUser(session.email);
-    // let user =  getUser(session.email);
-    // await sleep(2000);
-
     session.challenge = base64url.encode(generateRandomBuffer(32)); //BUFFER SOURCE
     console.log('this is user.id');
     // let user = 1;
@@ -253,7 +241,9 @@ export let getMakeCredentialChallenge = (options) => {
             publicKey.authenticatorSelection.userVerification = 'required';
         }
     }
-          })
+          });
+
+          console.log(publicKey);
       return Promise.resolve(publicKey);
 
       })
