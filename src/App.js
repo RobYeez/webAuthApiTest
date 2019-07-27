@@ -6,6 +6,7 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { passwordlessRegistration, getMakeCredentialChallenge, makeCredentialResponse, passwordlessLogin, getThatAssertionChallenge, getAssertionResponse } from "./Implementations/Server.js";
+<<<<<<< HEAD
 import {
   performatMakeCredRequest,
   publicKeyCredentialToJSON,
@@ -16,6 +17,15 @@ import CBOR from './Implementations/cbor.js';
 import base64url from 'base64url';
 import { parseAuthData, bufferToString, bufToHex } from './Implementations/Helpers';
 import firebase from "./firebase";
+=======
+import { performatMakeCredRequest, publicKeyCredentialToJSON , performatGetAssertRequest} from "./Implementations/Helpers";
+// import CBOR from 'borc';
+// import CBOR from 'cbor';
+import CBOR from './Implementations/cbor.js';
+// import base64url from './Implementations/base64url-arraybuffer.js'
+import base64url from 'base64url';
+import { parseAuthData, bufferToString, bufToHex } from './Implementations/Helpers';
+>>>>>>> 2386fd447dcc545cabb157d89352de044446e797
 
 
 let db = firebase.firestore();
@@ -182,7 +192,26 @@ class App extends React.Component {
             // user.registrationComplete = true;
             // user.credentials.push(id);
 
+<<<<<<< HEAD
             // updateUser(session.email, user);
+=======
+          })
+          .then((newCredentialInfo) => {
+            alert('Open your browser console!');
+            console.log('SUCCESS', newCredentialInfo)
+            console.log('ClientDataJSON: ', bufferToString(newCredentialInfo.response.clientDataJSON));
+            let attestationObject = CBOR.decode(newCredentialInfo.response.attestationObject);
+            console.log('AttestationObject: ', attestationObject);
+            let authData = parseAuthData(attestationObject.authData);
+            console.log('AuthData: ', authData);
+            console.log('CredID: ', bufToHex(authData.credID));
+            console.log('AAGUID: ', bufToHex(authData.aaguid));
+            console.log('PublicKey', CBOR.decode(authData.COSEPublicKey.buffer));
+
+            console.log('This is how the newCredentialInfo looks before JSON');
+            console.log(newCredentialInfo);
+
+>>>>>>> 2386fd447dcc545cabb157d89352de044446e797
 
             session = {};
           });

@@ -259,7 +259,13 @@ export let makeCredentialResponse = (payload) => {
     user.registrationComplete = true;
     user.credentials.push(payload.id);
 
+<<<<<<< HEAD
     updateUser(session.email, user);
+=======
+    db.updateUser(session.email, user);
+    console.log("im trying to see user credentials");
+    console.log(user.credentials);
+>>>>>>> 2386fd447dcc545cabb157d89352de044446e797
 
     session = {};
 
