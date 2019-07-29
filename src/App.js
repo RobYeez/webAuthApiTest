@@ -40,7 +40,6 @@ class App extends React.Component {
       credentials: "",
       credID: "",
       registrationComplete: false,
-        wait: false,
     };
 
     this.handleSubmitRegistration = this.handleSubmitRegistration.bind(this);
@@ -54,7 +53,9 @@ class App extends React.Component {
       console.log('registrationLoopCheckCorrect');
       let email = this.state.email;
       let displayName = this.state.displayName;
-       await passwordlessRegistration({email, displayName})
+       let response = await passwordlessRegistration({email, displayName});
+       console.log(response);
+       /*
           .then((serverResponse) => {
             if (serverResponse.status !== 'startFIDOEnrollmentPasswordlessSession') {
               throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage);
@@ -122,7 +123,11 @@ class App extends React.Component {
             alert('FAIL' + error);
             console.log('FAIL', error);
           });
+
+    */
     }
+
+
   }
 
   handleSubmitLogin(event) {

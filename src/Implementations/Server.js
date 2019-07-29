@@ -13,7 +13,7 @@ const sleep = (milliseconds) => {
 };
 
 //addUser(payload.email, payload); payload = email, displayname + id, credentials[]
-function addUser (email, struct, wait) {
+function addUser (email, struct) {
     let newUser = db.collection('users');
     //just add the new user into collection the other parts do the check
     console.log("hello");
@@ -25,8 +25,9 @@ function addUser (email, struct, wait) {
         wait: true,
     }).then(ref => {
         //just to double check it added
-        wait = true;
         console.log('Added document with ID onto firebase: ', ref.id);
+        return true;
+
 
     })
 }
@@ -61,7 +62,7 @@ export async function getUser(email){
                 console.log(doc.data());
 
                 // let dataz = await doc.data();
-                variable = doc.data();  // **** <- return value doesnt make it in time...
+                return Promise.resolve(doc.data());  // **** <- return value doesnt make it in time...
             });
     //         // if(snapshot.empty) {
     //             // console.log('There is no such User for getUser');
@@ -76,13 +77,7 @@ export async function getUser(email){
     //             })
             // }
         });
-            sleep(7000)
-                .then(() =>{
-        let wait = variable;
-        console.log('wait');
-        console.log(wait);
-        return wait;
-                })
+
 }
 //have to check this one too
 //change email to have updated user object (completetion/credentials) as string
@@ -200,11 +195,16 @@ export async function passwordlessRegistration (payload)  {
     session.uv = true; //just to identify its passwordlessregis;
 
     console.log('passwordlessRegistration complete');
-    if(payload.wait === true) {
-        return Promise.resolve({'status': 'startFIDOEnrollmentPasswordlessSession'});
-
-    }
-    // return Promise.resolve({'status': 'startFIDOEnrollmentPasswordlessSession'});
+    sleep(1220000);
+    // if(test === true) {
+    //     return ("startFIDOEnrollmentPasswordlessSession");
+    //
+    // }
+    // else {
+    //     return ('rip');
+    // }
+    getMakeCredentialChallenge({'uv':true});
+    // // return Promise.resolve({'status': 'startFIDOEnrollmentPasswordlessSession'});
 }
 //*** PROBLEM HERE RN ***
 export function getMakeCredentialChallenge(options) {
@@ -222,13 +222,13 @@ export function getMakeCredentialChallenge(options) {
     //
     //           const user = doc.data();  // **** <- return value doesnt make it in time...
 
-    var user;
-    var grab = getUser(session.email)
-        .then(() =>{
-             user =  grab;
-
-        });
-    // var user = await grab;
+    var user = getUser(session.email)
+    // var grab = getUser(session.email)
+    //     .then(() =>{
+    //          user =  grab;
+    //
+    //     });
+    // // var user = await grab;
     console.log(user);
     // console.log(user.next());
     // console.log(user.next());
