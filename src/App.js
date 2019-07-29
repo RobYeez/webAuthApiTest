@@ -12,6 +12,24 @@ import base64url from 'base64url';
 import { parseAuthData, bufferToString, bufToHex } from './Implementations/Helpers';
 
 //DEBUGGING AND ADDING IN OF FIREBASE ... leftoff at something wtih setState
+
+/*
+
+READ UP ON PROMISES...if anything try to make all of them async
+^^^START HERE^^^
+
+
+Tried to make functions in server async... failed.. sleep failed....
+
+
+
+*/
+
+
+const sleep = (milliseconds) => {
+    return new Promise(resolve => setTimeout(resolve, milliseconds))
+};
+
 class App extends React.Component {
   constructor(props) {
     super();
@@ -22,6 +40,7 @@ class App extends React.Component {
       credentials: "",
       credID: "",
       registrationComplete: false,
+        wait: false,
     };
 
     this.handleSubmitRegistration = this.handleSubmitRegistration.bind(this);
@@ -29,17 +48,18 @@ class App extends React.Component {
   }
 
   //make credentials
-  handleSubmitRegistration(event) {
+   async handleSubmitRegistration(event) {
     event.preventDefault();
     if(this.state.email && this.state.displayName) {
       console.log('registrationLoopCheckCorrect');
       let email = this.state.email;
       let displayName = this.state.displayName;
-      passwordlessRegistration({email, displayName})
+       await passwordlessRegistration({email, displayName})
           .then((serverResponse) => {
             if (serverResponse.status !== 'startFIDOEnrollmentPasswordlessSession') {
               throw new Error('Error registering user! Server returned: ' + serverResponse.errorMessage);
             }
+            sleep(7000);
             return getMakeCredentialChallenge({'uv': true});
           })
           .then((makeCredChallenge) => {

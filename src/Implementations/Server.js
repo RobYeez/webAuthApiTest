@@ -8,18 +8,26 @@ import firebase from '../firebase';
 
 let db = firebase.firestore();
 
+const sleep = (milliseconds) => {
+    return new Promise(resolve => setTimeout(resolve, milliseconds))
+};
+
 //addUser(payload.email, payload); payload = email, displayname + id, credentials[]
-function addUser (email, struct) {
+function addUser (email, struct, wait) {
     let newUser = db.collection('users');
     //just add the new user into collection the other parts do the check
+    console.log("hello");
     newUser.add({
         email: email,
         displayName: struct.displayName,
         rawID: struct.id,
         credentials: struct.credentials,
+        wait: true,
     }).then(ref => {
         //just to double check it added
+        wait = true;
         console.log('Added document with ID onto firebase: ', ref.id);
+
     })
 }
 //userExist(payload.email); checks to see if there is that user and returns true/false
@@ -39,30 +47,42 @@ function userExist (email) {
 }
 //not 100% sure if this one works need to get it to return as object
 //getUser(payload.email); grabs out user as Object
-async function getUser (email) {
+export async function getUser(email){
     let findUser = db.collection('users');
-    await findUser.where('email', '==', email).get()
+    let variable;
+    console.log('getuser hello');
+    findUser.where('email', '==', email).get()
+    // window.here = something;
+    // console.log(something);
+    // console.log(something.snapshot.doc.data());
         .then (snapshot => {
             snapshot.forEach(doc => {
                 console.log('this is doc data');
                 console.log(doc.data());
 
                 // let dataz = await doc.data();
-                return doc.data();  // **** <- return value doesnt make it in time...
-            })
-            // if(snapshot.empty) {
-                // console.log('There is no such User for getUser');
-                // throw new Error (`There is no such email: ${email}`);
+                variable = doc.data();  // **** <- return value doesnt make it in time...
+            });
+    //         // if(snapshot.empty) {
+    //             // console.log('There is no such User for getUser');
+    //             // throw new Error (`There is no such email: ${email}`);
+    //         // }
+    //         // else {
+    //             // console.log('User does Exist getUser');
+    //             // snapshot.forEach(doc => {
+    //             //     console.log(doc.id, '=>', doc.data()); //doc.id is specific to that one id
+    //             //     return doc.data();
+    //                 // console.log(JSON.stringify(doc.data()));
+    //             })
             // }
-            // else {
-                // console.log('User does Exist getUser');
-                // snapshot.forEach(doc => {
-                //     console.log(doc.id, '=>', doc.data()); //doc.id is specific to that one id
-                //     return doc.data();
-                    // console.log(JSON.stringify(doc.data()));
+        });
+            sleep(7000)
+                .then(() =>{
+        let wait = variable;
+        console.log('wait');
+        console.log(wait);
+        return wait;
                 })
-            // }
-        // })
 }
 //have to check this one too
 //change email to have updated user object (completetion/credentials) as string
@@ -161,41 +181,57 @@ function getUserByEmailHandle (userHandle) {
 let session = {};
 // let user;
 //REGISTER STUFF
-export let passwordlessRegistration = (payload) => {
+export async function passwordlessRegistration (payload)  {
     session = {};
     //if user already exist (check email) (check registration meaning credentials are made)
-    if(userExist(payload.email) && getUser(payload.email).registrationComplete) { //.registrationComplete?
-        return Promise.reject({'status': 'failed', 'errorMessage': 'User already exists!'});
-    }
+    // if(userExist(payload.email) && getUser(payload.email).registrationComplete) { //.registrationComplete?
+    //     return Promise.reject({'status': 'failed', 'errorMessage': 'User already exists!'});
+    // }
 
     //encode payload id so no one knows
     payload.id = base64url.encode(generateRandomBuffer(32));
     payload.credentials = [];
+    // let wait = false;
+    let test = await addUser(payload.email, payload); //add user to DB
+    // var test2 = await test;
 
-    addUser(payload.email, payload); //add user to DB
 
     session.email = payload.email;
     session.uv = true; //just to identify its passwordlessregis;
 
     console.log('passwordlessRegistration complete');
-    return Promise.resolve({'status': 'startFIDOEnrollmentPasswordlessSession'});
-};
+    if(payload.wait === true) {
+        return Promise.resolve({'status': 'startFIDOEnrollmentPasswordlessSession'});
+
+    }
+    // return Promise.resolve({'status': 'startFIDOEnrollmentPasswordlessSession'});
+}
 //*** PROBLEM HERE RN ***
-export let getMakeCredentialChallenge = (options) => {
+export function getMakeCredentialChallenge(options) {
     //check to see it is there
     var publicKey;
     if (!session.email) {
         return Promise.reject({'status': 'failed', 'errorMessage': 'Access denied!'});
     }
-    let findUser = db.collection('users');
-    const user2 = findUser.where('email', '==', session.email).get()
-      .then (snapshot => {
-          snapshot.forEach(doc => {
-              console.log('this is doc data');
-              console.log(doc.data());
+    // let findUser = db.collection('users');
+    // const user2 = findUser.where('email', '==', session.email).get()
+    //   .then (snapshot => {
+    //       snapshot.forEach(doc => {
+    //           console.log('this is doc data');
+    //           console.log(doc.data());
+    //
+    //           const user = doc.data();  // **** <- return value doesnt make it in time...
 
-              const user = doc.data();  // **** <- return value doesnt make it in time...
+    var user;
+    var grab = getUser(session.email)
+        .then(() =>{
+             user =  grab;
 
+        });
+    // var user = await grab;
+    console.log(user);
+    // console.log(user.next());
+    // console.log(user.next());
 
     // let user = async() => {
     //     return await getUser(session.email);
@@ -216,7 +252,7 @@ export let getMakeCredentialChallenge = (options) => {
     console.log(user);
     // console.log(user.email);
 
-     publicKey = {
+    publicKey = {
         challenge: session.challenge,
         rp: {
             // id: 'TestCorpsID', //optional id <- can help to make it more secure ...basically the browswer
@@ -253,11 +289,11 @@ export let getMakeCredentialChallenge = (options) => {
             publicKey.authenticatorSelection.userVerification = 'required';
         }
     }
-          })
-      return Promise.resolve(publicKey);
+    // })
+    return Promise.resolve(publicKey);
 
-      })
-};
+    // })
+}
 
 export let makeCredentialResponse = (payload) => {
     if(!session.email) {
