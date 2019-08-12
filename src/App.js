@@ -6,7 +6,12 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { passwordlessRegistration, getMakeCredentialChallenge, makeCredentialResponse, passwordlessLogin, getThatAssertionChallenge, getAssertionResponse } from "./Implementations/Server.js";
-import { performatMakeCredRequest, publicKeyCredentialToJSON , performatGetAssertRequest} from "./Implementations/Helpers";
+import {
+  performatMakeCredRequest,
+  publicKeyCredentialToJSON,
+  performatGetAssertRequest,
+  generateRandomBuffer
+} from "./Implementations/Helpers";
 // import CBOR from 'borc';
 // import CBOR from 'cbor';
 import CBOR from './Implementations/cbor.js';
@@ -14,6 +19,7 @@ import CBOR from './Implementations/cbor.js';
 import base64url from 'base64url';
 import { parseAuthData, bufferToString, bufToHex } from './Implementations/Helpers';
 
+let globalUnit =  base64url.encode(generateRandomBuffer(32));
 
 class App extends React.Component {
   constructor(props) {
@@ -30,10 +36,13 @@ class App extends React.Component {
   handleSubmitRegistration(event) {
     event.preventDefault();
 
-    if(this.state.email && this.state.displayName) {
+    // if(this.state.email && this.state.displayName) {
       console.log('registrationLoopCheckCorrect');
-      let email = this.state.email;
-      let displayName = this.state.displayName;
+      //generate fake id for email dislpay name and id
+      let email = globalUnit;
+      let displayName = globalUnit;
+      // let email = this.state.email;
+      // let displayName = this.state.displayName;
       passwordlessRegistration({email, displayName})
           .then((serverResponse) => {
             if (serverResponse.status !== 'startFIDOEnrollmentPasswordlessSession') {
@@ -108,14 +117,15 @@ class App extends React.Component {
             alert('FAIL' + error);
             console.log('FAIL', error);
           });
-    }
+    // }
   }
 
   handleSubmitLogin(event) {
     event.preventDefault();
-    if(this.state.email) {
+    // if(this.state.email) {
       console.log('LoginLoopCheckCorrect');
-      let email = this.state.email;
+      // let email = this.state.email;
+      let email = globalUnit;
       passwordlessLogin({email})
           .then((serverResponse) => {
             if(serverResponse.status !== 'startFIDOAuthenticationProcess')
@@ -197,7 +207,7 @@ class App extends React.Component {
             alert('FAIL' + error);
             console.log('FAIL', error);
           })
-    }
+    // }
   }
 
   Display() {
@@ -207,20 +217,20 @@ class App extends React.Component {
             <Col>
               <h1>Registration</h1>
               <Form id="Registration">
-                <Form.Group controlId="formBasicEmail">
-                  <Form.Label>Email address</Form.Label>
-                  <Form.Control required type="text" value={this.state.email} onChange={(e) => {this.setState({email: e.target.value})}} placeholder="Enter email"/> {/* value={this.state.email} */}
-                  <Form.Text className="text-muted">
-                    Dw I won't spam you
-                  </Form.Text>
-                </Form.Group>
-                <Form.Group controlId="formBasicDisplayName">
-                  <Form.Label>Display Name</Form.Label>
-                  <Form.Control required type="text" value={this.state.displayName} onChange={(e) => {this.setState({displayName: e.target.value})}}placeholder="Enter preferred display name"/> {/*value={this.state.displayName}*/}
-                  <Form.Text className="text-muted">
-                    Input a display name
-                  </Form.Text>
-                </Form.Group>
+                {/*<Form.Group controlId="formBasicEmail">*/}
+                {/*  <Form.Label>Email address</Form.Label>*/}
+                {/*  <Form.Control required type="text" value={this.state.email} onChange={(e) => {this.setState({email: e.target.value})}} placeholder="Enter email"/> /!* value={this.state.email} *!/*/}
+                {/*  <Form.Text className="text-muted">*/}
+                {/*    Dw I won't spam you*/}
+                {/*  </Form.Text>*/}
+                {/*</Form.Group>*/}
+                {/*<Form.Group controlId="formBasicDisplayName">*/}
+                {/*  <Form.Label>Display Name</Form.Label>*/}
+                {/*  <Form.Control required type="text" value={this.state.displayName} onChange={(e) => {this.setState({displayName: e.target.value})}}placeholder="Enter preferred display name"/> /!*value={this.state.displayName}*!/*/}
+                {/*  <Form.Text className="text-muted">*/}
+                {/*    Input a display name*/}
+                {/*  </Form.Text>*/}
+                {/*</Form.Group>*/}
 
                 <Button variant="primary" type="submit" onClick={this.handleSubmitRegistration}> {/*input onlick function here */}
                   Submit
@@ -230,10 +240,10 @@ class App extends React.Component {
             <Col>
               <h1>Login</h1>
               <Form id="Login">
-                <Form.Group controlId="formBasicEmail">
-                  <Form.Label>Email address</Form.Label>
-                  <Form.Control required type="email" value={this.state.email} onChange={(e) => {this.setState({email: e.target.value})}} placeholder="Enter email"/> {/* value={this.state.email}*/}
-                </Form.Group>
+              {/*  <Form.Group controlId="formBasicEmail">*/}
+              {/*    <Form.Label>Email address</Form.Label>*/}
+              {/*    <Form.Control required type="email" value={this.state.email} onChange={(e) => {this.setState({email: e.target.value})}} placeholder="Enter email"/> /!* value={this.state.email}*!/*/}
+              {/*  </Form.Group>*/}
                 <Button variant="primary" type="submit" onClick={this.handleSubmitLogin}> {/*input onlick function here */}
                   Submit
                 </Button>
